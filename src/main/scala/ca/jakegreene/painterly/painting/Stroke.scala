@@ -1,4 +1,4 @@
 package ca.jakegreene.painterly.painting
 
 case class Point(x: Int, y: Int)
-case class Stroke(points: Seq[Point])
+case class Stroke(points: Seq[Point], width: Int)

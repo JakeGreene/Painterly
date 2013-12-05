@@ -12,20 +12,20 @@ object Painterly {
     val app = new PainterlyApplet()
     frame.getContentPane().add(app)
     app.init
- 
-    frame.pack
+    
+    frame.setSize(800, 600)
     frame.setVisible(true)
   }
 }
 
 class PainterlyApplet extends PApplet {
   
-  val shortStroke = Stroke(Seq(Point(10,20), Point(60, 10)))
-  val cross = Stroke(Seq(Point(50, 50), Point(70, 70), Point(70, 50), Point(50, 70)))
+  val shortStroke = Stroke(Seq(Point(10,20), Point(60, 10)), 1)
+  val cross = Stroke(Seq(Point(50, 50), Point(70, 70), Point(70, 50), Point(50, 70)), 5)
   val renderer = new LinearStrokeRenderer(this)
   
   override def setup() {
-    size(800, 600, PConstants.P3D);
+    size(800, 550, PConstants.P3D);
   }
   
   override def draw() {
