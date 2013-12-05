@@ -5,6 +5,7 @@ import processing.core.PConstants
 import ca.jakegreene.painterly.painting.Stroke
 import ca.jakegreene.painterly.painting.Point
 import ca.jakegreene.painterly.render.LinearStrokeRenderer
+import java.awt.Color
 
 object Painterly {
   def main(args: Array[String]) {
@@ -20,8 +21,8 @@ object Painterly {
 
 class PainterlyApplet extends PApplet {
   
-  val shortStroke = Stroke(Seq(Point(10,20), Point(60, 10)), 1)
-  val cross = Stroke(Seq(Point(50, 50), Point(300, 300), Point(300, 50), Point(50, 300)), 5)
+  val shortStroke = Stroke(Seq(Point(10,20), Point(60, 10)), 1, Color.BLACK)
+  val cross = Stroke(Seq(Point(50, 50), Point(300, 300), Point(300, 50), Point(50, 300)), 5, Color.ORANGE)
   val renderer = new LinearStrokeRenderer(this)
   
   override def setup() {
