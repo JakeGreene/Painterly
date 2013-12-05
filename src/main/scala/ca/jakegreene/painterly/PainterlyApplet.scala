@@ -8,7 +8,7 @@ import ca.jakegreene.painterly.render.LinearStrokeRenderer
 
 object Painterly {
   def main(args: Array[String]) {
-    val frame = new javax.swing.JFrame("Test")
+    val frame = new javax.swing.JFrame("Painterly")
     val app = new PainterlyApplet()
     frame.getContentPane().add(app)
     app.init
@@ -21,11 +21,18 @@ object Painterly {
 class PainterlyApplet extends PApplet {
   
   val shortStroke = Stroke(Seq(Point(10,20), Point(60, 10)), 1)
-  val cross = Stroke(Seq(Point(50, 50), Point(70, 70), Point(70, 50), Point(50, 70)), 5)
+  val cross = Stroke(Seq(Point(50, 50), Point(300, 300), Point(300, 50), Point(50, 300)), 5)
   val renderer = new LinearStrokeRenderer(this)
   
   override def setup() {
-    size(800, 550, PConstants.P3D);
+    /*
+     * The default render mode allows for bevel and
+     * line-connector types.
+     * 
+     * Consider using P2D or P3D only if speed is
+     * becoming a larger issue than smooth strokes
+     */
+    size(800, 600);
   }
   
   override def draw() {
