@@ -1,13 +1,18 @@
+
+
 package ca.jakegreene.painterly
 
-import processing.core.PApplet
-import processing.core.PConstants
-import ca.jakegreene.painterly.painting.Stroke
-import ca.jakegreene.painterly.painting.Point
 import java.awt.Color
 import ca.jakegreene.painterly.painting.Layer
-import ca.jakegreene.painterly.render.StrokeRenderers
+import ca.jakegreene.painterly.painting.Point
+import ca.jakegreene.painterly.painting.Stroke
 import ca.jakegreene.painterly.render.LayerRenderers
+import processing.core.PApplet
+import ca.jakegreene.painterly.render.StrokeRenderers
+import processing.core.PConstants
+import ca.jakegreene.painterly.util.Convolver
+import processing.core.PImage
+import ca.jakegreene.painterly.util.Blur
 
 object Painterly {
   def main(args: Array[String]) {
@@ -16,23 +21,13 @@ object Painterly {
     frame.getContentPane().add(app)
     app.init
     
-    frame.setSize(800, 600)
+    frame.setSize(1440, 900)
     frame.setVisible(true)
   }
 }
 
 class PainterlyApplet extends PApplet {
-  
-  implicit val renderer = this
-  
-  val crossPoints = Seq(Point(50, 50), Point(300, 300), Point(300, 50), Point(50, 300))
-  val cross = Stroke(crossPoints, 5, Color.ORANGE)
-  val offsetPoints = crossPoints.map{case Point(x, y) => Point(x + 10, y + 5)}
-  val offsetCross = Stroke(offsetPoints, 3, Color.BLUE)
-  val layer = Layer(Seq(cross))
-  val bottomLayer = Layer(Seq(offsetCross))
-  
-  val renderLayer = LayerRenderers.drawInOrder(StrokeRenderers.drawLinear) _
+  val image = loadImage("Domo_lizard_smaller.jpg")
   
   override def setup() {
     /*
@@ -42,12 +37,13 @@ class PainterlyApplet extends PApplet {
      * P3D (needed for depth) does not support these
      * functions
      */
-    size(800, 600, PConstants.P3D);
+    size(1440, 900, PConstants.P3D);
+    frameRate(30)
   }
   
   override def draw() {
     background(255);
-    renderLayer(layer, 1)
-    renderLayer(bottomLayer, 0)
+    val blurredImage = Blur.gaussian(image, mouseY >> 4)
+    image(blurredImage, 0, 0)
   }
 }
