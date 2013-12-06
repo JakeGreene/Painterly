@@ -37,6 +37,8 @@ import processing.core.PImage;
 //v1.3: Fixed a bug that caused blurs that start at y>0
 //	 to go wrong. Thanks to Jeroen Schellekens for 
 //    finding it!
+// 
+// SOURCE FOUND AT http://incubator.quasimondo.com/processing/fastblur.pde
 public class Convolver {
 	int radius;
 	int kernelSize;
