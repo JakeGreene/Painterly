@@ -10,9 +10,9 @@ import ca.jakegreene.painterly.render.LayerRenderers
 import processing.core.PApplet
 import ca.jakegreene.painterly.render.StrokeRenderers
 import processing.core.PConstants
-import ca.jakegreene.painterly.util.Convolver
 import processing.core.PImage
 import ca.jakegreene.painterly.util.Blur
+import ca.jakegreene.processing.AdvancedPImage._
 
 object Painterly {
   def main(args: Array[String]) {
@@ -21,13 +21,18 @@ object Painterly {
     frame.getContentPane().add(app)
     app.init
     
-    frame.setSize(1440, 900)
+    frame.setSize(1800, 900)
     frame.setVisible(true)
   }
 }
 
 class PainterlyApplet extends PApplet {
-  val image = loadImage("Domo_lizard_smaller.jpg")
+  implicit val applet = this
+  
+  val image = loadImage("Domo_lizard_smaller.png")
+  val blurredImage = Blur.gaussian(image, 6)
+  var differenceImage: PImage = null
+  
   
   override def setup() {
     /*
@@ -37,13 +42,16 @@ class PainterlyApplet extends PApplet {
      * P3D (needed for depth) does not support these
      * functions
      */
-    size(1440, 900, PConstants.P3D);
+    size(1800, 900, PConstants.P3D);
     frameRate(30)
+    differenceImage = image.difference(blurredImage)
   }
   
   override def draw() {
     background(255);
-    val blurredImage = Blur.gaussian(image, mouseY >>> 6)
-    image(blurredImage, 0, 0)
+    
+    image(image, 0, 0)
+    image(blurredImage, 600, 0)
+    image(differenceImage, 1200, 0)
   }
 }
