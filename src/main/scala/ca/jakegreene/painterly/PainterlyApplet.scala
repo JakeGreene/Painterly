@@ -6,8 +6,8 @@ import ca.jakegreene.painterly.painting.Stroke
 import ca.jakegreene.painterly.painting.Point
 import java.awt.Color
 import ca.jakegreene.painterly.painting.Layer
-import ca.jakegreene.painterly.render.InOrderRenderer
 import ca.jakegreene.painterly.render.StrokeRenderer
+import ca.jakegreene.painterly.render.LayerRenderer
 
 object Painterly {
   def main(args: Array[String]) {
@@ -32,7 +32,7 @@ class PainterlyApplet extends PApplet {
   val layer = Layer(Seq(cross))
   val bottomLayer = Layer(Seq(offsetCross))
   
-  val layerRenderer = new InOrderRenderer(StrokeRenderer.drawLinear)
+  val renderLayer = LayerRenderer.drawInOrder(StrokeRenderer.drawLinear) _
   
   override def setup() {
     /*
@@ -47,7 +47,7 @@ class PainterlyApplet extends PApplet {
   
   override def draw() {
     background(255);
-    layerRenderer.draw(layer, 1)
-    layerRenderer.draw(bottomLayer, 0)
+    renderLayer(layer, 1)
+    renderLayer(bottomLayer, 0)
   }
 }
