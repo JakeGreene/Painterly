@@ -43,7 +43,7 @@ class PainterlyApplet extends PApplet {
   
   override def draw() {
     background(255);
-    val blurredImage = Blur.gaussian(image, mouseY >> 4)
+    val blurredImage = Blur.gaussian(image, mouseY >>> 6)
     image(blurredImage, 0, 0)
   }
 }
