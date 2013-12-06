@@ -4,13 +4,11 @@ import ca.jakegreene.painterly.painting.Stroke
 import processing.core.PApplet
 import processing.core.PConstants
 
-
-trait StrokeRenderer {
-  def draw(stroke: Stroke, depth: Int)
-}
-
-class LinearStrokeRenderer(renderer: PApplet) extends StrokeRenderer {
-  def draw(stroke: Stroke, depth: Int) {
+/**
+ * Rendering Strategies for Strokes
+ */
+object StrokeRenderer {
+  def drawLinear(stroke: Stroke, depth: Int)(implicit renderer: PApplet) {
     renderer.strokeWeight(stroke.width)
     renderer.strokeCap(PConstants.ROUND)
     renderer.stroke(stroke.colour.getRed(), stroke.colour.getGreen(), stroke.colour.getBlue())
