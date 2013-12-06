@@ -7,7 +7,7 @@ import processing.core.PConstants
 /**
  * Rendering Strategies for Strokes
  */
-object StrokeRenderer {
+object StrokeRenderers {
   def drawLinear(stroke: Stroke, depth: Int)(implicit renderer: PApplet) {
     renderer.strokeWeight(stroke.width)
     renderer.strokeCap(PConstants.ROUND)
