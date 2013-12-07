@@ -28,8 +28,9 @@ class AdvancedPImage(self: PImage) {
   import AdvancedPImage._
   /**
    * Create a difference image, calculating
-   * the different between the RGB of this
-   * and other
+   * the difference between the RGB of this
+   * and other and setting it as the grey-scale
+   * colour of the newly produced image
    */
   def difference(other: PImage)(implicit applet: PApplet): PImage = {
     

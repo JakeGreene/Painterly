@@ -2,17 +2,12 @@
 
 package ca.jakegreene.painterly
 
-import java.awt.Color
-import ca.jakegreene.painterly.painting.Layer
-import ca.jakegreene.painterly.painting.Point
-import ca.jakegreene.painterly.painting.Stroke
-import ca.jakegreene.painterly.render.LayerRenderers
+import ca.jakegreene.painterly.painting.PainterlyCreator
+import ca.jakegreene.painterly.util.Blur
+import ca.jakegreene.processing.AdvancedPImage.PImage2AdvancedPImage
 import processing.core.PApplet
-import ca.jakegreene.painterly.render.StrokeRenderers
 import processing.core.PConstants
 import processing.core.PImage
-import ca.jakegreene.painterly.util.Blur
-import ca.jakegreene.processing.AdvancedPImage._
 
 object Painterly {
   def main(args: Array[String]) {
@@ -21,7 +16,7 @@ object Painterly {
     frame.getContentPane().add(app)
     app.init
     
-    frame.setSize(1800, 900)
+    frame.setSize(600, 450)
     frame.setVisible(true)
   }
 }
@@ -29,10 +24,8 @@ object Painterly {
 class PainterlyApplet extends PApplet {
   implicit val applet = this
   
-  val image = loadImage("Domo_lizard_smaller.png")
-  val blurredImage = Blur.gaussian(image, 6)
-  var differenceImage: PImage = null
-  
+  val image = loadImage("Domo_lizard_smaller.png")  
+  val painter = new PainterlyCreator()
   
   override def setup() {
     /*
@@ -42,16 +35,22 @@ class PainterlyApplet extends PApplet {
      * P3D (needed for depth) does not support these
      * functions
      */
-    size(1800, 900, PConstants.P3D);
+    size(600, 450, PConstants.P3D);
     frameRate(30)
-    differenceImage = image.difference(blurredImage)
+    noLoop()
+    noStroke()
   }
   
   override def draw() {
     background(255);
-    
     image(image, 0, 0)
-    image(blurredImage, 600, 0)
-    image(differenceImage, 1200, 0)
+    val strokePoints = painter.findStrokePoints(image, 8)
+    strokePoints.foreach {
+      case (x, y, size) => {
+        val colour = image.pixels(x + (y*image.width))
+        fill(colour)
+        ellipse(x, y, size, size)
+      }
+    }
   }
 }
