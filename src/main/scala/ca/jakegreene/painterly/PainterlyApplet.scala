@@ -16,7 +16,7 @@ object Painterly {
     frame.getContentPane().add(app)
     app.init
     
-    frame.setSize(600, 450)
+    frame.setSize(1000, 700)
     frame.setVisible(true)
   }
 }
@@ -35,7 +35,7 @@ class PainterlyApplet extends PApplet {
      * P3D (needed for depth) does not support these
      * functions
      */
-    size(600, 450, PConstants.P3D);
+    size(1000, 700, PConstants.P3D);
     frameRate(30)
     noLoop()
     noStroke()
@@ -44,7 +44,13 @@ class PainterlyApplet extends PApplet {
   override def draw() {
     background(255);
     image(image, 0, 0)
-    val strokePoints = painter.findStrokePoints(image, 8)
+    drawLayer(20)
+    drawLayer(10)
+    drawLayer(5)
+  }
+  
+  private def drawLayer(strokeSize: Int) {
+    val strokePoints = painter.findStrokePoints(image, strokeSize)
     strokePoints.foreach {
       case (x, y, size) => {
         val colour = image.pixels(x + (y*image.width))

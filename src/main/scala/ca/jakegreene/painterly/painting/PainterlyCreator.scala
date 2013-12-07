@@ -9,7 +9,7 @@ import processing.core.PApplet
 class PainterlyCreator {
   
   def findStrokePoints(image: PImage, strokeSize: Int)(implicit applet: PApplet): Seq[(Int, Int, Int)] = {
-    val threshold = 6
+    val threshold = 2
     val blurredImage = Blur.gaussian(image, strokeSize)
     val differenceImage = image.difference(blurredImage)
     val gridSize = strokeSize
