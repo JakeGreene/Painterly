@@ -8,6 +8,7 @@ import ca.jakegreene.processing.AdvancedPImage._
 import processing.core.PApplet
 import processing.core.PConstants
 import processing.core.PImage
+import ca.jakegreene.processing.Kernel
 
 object Painterly {
   def main(args: Array[String]) {

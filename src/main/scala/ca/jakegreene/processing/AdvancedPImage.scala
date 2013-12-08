@@ -6,17 +6,6 @@ import scala.language.implicitConversions
 
 object AdvancedPImage {
   
-  /**
-   * The data is arranged (y)(x) so that 
-   * the array can be built
-   * Array( Array(...),
-   *        Array(...),
-   *        Array(...), ...
-   *       )
-   * and look natural
-   */
-  case class Kernel(dataByY: Array[Array[Float]])
-  
   private[AdvancedPImage] case class Colour(red: Float, green: Float, blue: Float)
   
   private[AdvancedPImage] def toColour(colour: Int)(implicit applet: PApplet): Colour = {
@@ -67,13 +56,17 @@ class AdvancedPImage(self: PImage) {
   }
   
   def convolve(kernel: Kernel)(implicit applet: PApplet): PImage = {
-    val pixels = for {
-      y <- 0 to (self.height - 1)
-      x <- 0 to (self.width - 1)
-    } yield applyKernel(self, kernel, x, y)
+    val pixels = convolvePixels(kernel)
     val image = new PImage(self.width, self.height)
     image.pixels = pixels.toArray
     return image
+  }
+  
+  private def convolvePixels(kernel: Kernel)(implicit applet: PApplet): Seq[Int] = {
+    for {
+      y <- 0 to (self.height - 1)
+      x <- 0 to (self.width - 1)
+    } yield applyKernel(self, kernel, x, y)
   }
   
   private def applyKernel(image: PImage, kernel: Kernel, x: Int, y: Int)(implicit applet: PApplet): Int = {
@@ -84,15 +77,15 @@ class AdvancedPImage(self: PImage) {
   }
   
   private def applyKernelForColour(toColour: Int => Float, image: PImage, kernel: Kernel, x: Int, y: Int): Int = {
-    val xOffset = kernel.dataByY(0).length / 2
-    val yOffset = kernel.dataByY.length / 2
+    val xOffset = kernel.width / 2
+    val yOffset = kernel.height / 2
     val factors = for {
-      x_k <- 0 to (kernel.dataByY(0).length - 1)
-      y_k <- 0 to (kernel.dataByY.length - 1)
+      x_k <- 0 to (kernel.width - 1)
+      y_k <- 0 to (kernel.height - 1)
       x_i = x + x_k - xOffset + 1
       y_i = y + y_k - yOffset + 1
       index = min(x_i + (y_i * image.width), image.pixels.length - 1)
-    } yield (toColour(image.pixels(index)) * kernel.dataByY(y_k)(x_k))
+    } yield (toColour(image.pixels(index)) * kernel.get(x_k, y_k))
     return factors.sum.toInt
   }
    
