@@ -5,6 +5,18 @@ import processing.core.PApplet
 import scala.language.implicitConversions
 
 object AdvancedPImage {
+  
+  /**
+   * The data is arranged (y)(x) so that 
+   * the array can be built
+   * Array( Array(...),
+   *        Array(...),
+   *        Array(...), ...
+   *       )
+   * and look natural
+   */
+  case class Kernel(dataByY: Array[Array[Float]])
+  
   private[AdvancedPImage] case class Colour(red: Float, green: Float, blue: Float)
   
   private[AdvancedPImage] def toColour(colour: Int)(implicit applet: PApplet): Colour = {
@@ -52,6 +64,40 @@ class AdvancedPImage(self: PImage) {
     }
     
     return diffImage
+  }
+  
+  def convolve(kernel: Kernel)(implicit applet: PApplet): PImage = {
+    val pixels = for {
+      y <- 0 to (self.height - 1)
+      x <- 0 to (self.width - 1)
+    } yield applyKernel(self, kernel, x, y)
+    val image = new PImage(self.width, self.height)
+    image.pixels = pixels.toArray
+    return image
+  }
+  
+  private def applyKernel(image: PImage, kernel: Kernel, x: Int, y: Int)(implicit applet: PApplet): Int = {
+    val red = applyKernelForColour(applet.red, image, kernel, x, y)
+    val green = applyKernelForColour(applet.green, image, kernel, x, y)
+    val blue = applyKernelForColour(applet.blue, image, kernel, x, y)
+    return applet.color(red, green, blue)
+  }
+  
+  private def applyKernelForColour(toColour: Int => Float, image: PImage, kernel: Kernel, x: Int, y: Int): Int = {
+    val xOffset = kernel.dataByY(0).length / 2
+    val yOffset = kernel.dataByY.length / 2
+    val factors = for {
+      x_k <- 0 to (kernel.dataByY(0).length - 1)
+      y_k <- 0 to (kernel.dataByY.length - 1)
+      x_i = x + x_k - xOffset + 1
+      y_i = y + y_k - yOffset + 1
+      index = min(x_i + (y_i * image.width), image.pixels.length - 1)
+    } yield (toColour(image.pixels(index)) * kernel.dataByY(y_k)(x_k))
+    return factors.sum.toInt
+  }
+   
+  private def min(a: Int, b: Int): Int = {
+    if (a < b) a else b
   }
 
 }
