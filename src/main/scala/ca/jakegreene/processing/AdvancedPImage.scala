@@ -21,11 +21,11 @@ object AdvancedPImage {
     return diff
   }
   
-  implicit def PImage2AdvancedPImage(image: PImage) = new AdvancedPImage(image)
+  implicit def PImage2AdvancedPImage(image: PImage)(implicit applet: PApplet) = new AdvancedPImage(image)(applet)
   
 }
 
-class AdvancedPImage(self: PImage) {
+class AdvancedPImage(protected val self: PImage)(protected implicit val applet: PApplet) {
   import AdvancedPImage._
   /**
    * Create a difference image, calculating
@@ -33,7 +33,7 @@ class AdvancedPImage(self: PImage) {
    * and other and setting it as the grey-scale
    * colour of the newly produced image
    */
-  def difference(other: PImage)(implicit applet: PApplet): PImage = {
+  def difference(other: PImage): PImage = {
     
     if (other.width != self.width || other.height != self.height) {
       throw new IllegalArgumentException("Provided PImage does not have equal height, width")  
@@ -55,25 +55,26 @@ class AdvancedPImage(self: PImage) {
     return diffImage
   }
   
-  def convolve(kernel: Kernel)(implicit applet: PApplet): PImage = {
+  def convolve(kernel: Kernel): PImage = {
     val pixels = convolvePixels(kernel)
     val image = new PImage(self.width, self.height)
-    image.pixels = pixels.toArray
+    image.pixels = pixels.map{ case (red, green, blue) => applet.color(red, green,blue)}.toArray
     return image
   }
   
-  private def convolvePixels(kernel: Kernel)(implicit applet: PApplet): Seq[Int] = {
+  protected def convolvePixels(kernel: Kernel): Seq[(Int, Int, Int)] = {
     for {
       y <- 0 to (self.height - 1)
       x <- 0 to (self.width - 1)
-    } yield applyKernel(self, kernel, x, y)
+      (red, green, blue) = applyKernel(self, kernel, x, y)
+    } yield (red, green, blue)
   }
   
-  private def applyKernel(image: PImage, kernel: Kernel, x: Int, y: Int)(implicit applet: PApplet): Int = {
+  protected def applyKernel(image: PImage, kernel: Kernel, x: Int, y: Int): (Int, Int, Int) = {
     val red = applyKernelForColour(applet.red, image, kernel, x, y)
     val green = applyKernelForColour(applet.green, image, kernel, x, y)
     val blue = applyKernelForColour(applet.blue, image, kernel, x, y)
-    return applet.color(red, green, blue)
+    return (red, green, blue)
   }
   
   private def applyKernelForColour(toColour: Int => Float, image: PImage, kernel: Kernel, x: Int, y: Int): Int = {
@@ -88,7 +89,17 @@ class AdvancedPImage(self: PImage) {
     } yield (toColour(image.pixels(index)) * kernel.get(x_k, y_k))
     return factors.sum.toInt
   }
-   
+  
+  def luminance(x: Int, y: Int): Float = {
+    val pixel = self.get(x, y)
+    return colourLuminance(applet.red(pixel), applet.green(pixel), applet.blue(pixel))
+  }
+  
+  protected def colourLuminance(red: Float, green: Float, blue: Float): Float = {
+    // These magic numbers are from the Digital CCIR601 standard
+    return (0.299f * red) + (0.587f * green) + (0.114f * blue)
+  }
+  
   private def min(a: Int, b: Int): Int = {
     if (a < b) a else b
   }

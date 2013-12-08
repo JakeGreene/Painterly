@@ -3,12 +3,11 @@
 package ca.jakegreene.painterly
 
 import ca.jakegreene.painterly.painting.PainterlyCreator
-import ca.jakegreene.painterly.util.Blur
-import ca.jakegreene.processing.AdvancedPImage._
+import ca.jakegreene.processing.AdvancedPImage.PImage2AdvancedPImage
+import ca.jakegreene.processing.GradientImage
+import ca.jakegreene.processing.Kernel
 import processing.core.PApplet
 import processing.core.PConstants
-import processing.core.PImage
-import ca.jakegreene.processing.Kernel
 
 object Painterly {
   def main(args: Array[String]) {
@@ -57,15 +56,11 @@ class PainterlyApplet extends PApplet {
     fill(0, 120, 120)
     text("Original Image", 20, 20)
     image(image, 0, 50)
-    val yEdges = image.convolve(sobelYKernel)
+    val gradientImage = GradientImage(image)
     text("Vertical Edges", 620, 20)
-    image(yEdges, 600, 50)
-    val xEdges = image.convolve(sobelXKernel)
+    image(gradientImage.yGradientImage, 600, 50)
     text("Horizontal Edges", 1220, 20)
-    image(xEdges, 1200, 50)
-    //drawLayer(20)
-    //drawLayer(10)
-    //drawLayer(5)
+    image(gradientImage.xGradientImage, 1200, 50)
   }
   
   private def drawLayer(strokeSize: Int) {

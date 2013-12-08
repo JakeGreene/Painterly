@@ -11,6 +11,15 @@ object Kernel {
    * and look natural
    */
   def apply(modifiers: Array[Array[Float]]) = new Kernel(modifiers)
+  
+  private val sobelY = Array(Array[Float](1, 2, 1),
+                    Array[Float](0, 0, 0),
+                    Array[Float](-1, -2, -1))
+  val sobelKernelY = Kernel(sobelY)
+  private val sobelX = Array(Array[Float](1, 0, -1),
+                     Array[Float](2, 0, -2),
+                     Array[Float](1, 0, -1))
+  val sobelKernelX = Kernel(sobelX) 
 }
 
 class Kernel(val modifiers: Array[Array[Float]]) {
