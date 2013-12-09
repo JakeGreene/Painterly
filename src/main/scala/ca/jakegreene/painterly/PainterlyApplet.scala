@@ -2,12 +2,15 @@
 
 package ca.jakegreene.painterly
 
+import scala.collection.mutable.ListBuffer
+
 import ca.jakegreene.painterly.painting.PainterlyCreator
 import ca.jakegreene.processing.AdvancedPImage.PImage2AdvancedPImage
 import ca.jakegreene.processing.GradientImage
 import ca.jakegreene.processing.Kernel
 import processing.core.PApplet
 import processing.core.PConstants
+import processing.core.PImage
 
 object Painterly {
   def main(args: Array[String]) {
@@ -24,7 +27,8 @@ object Painterly {
 class PainterlyApplet extends PApplet {
   implicit val applet = this
   
-  val image = loadImage("Domo_lizard_smaller.png")  
+  val image = loadImage("Domo_lizard_smaller.png") 
+  println(s"Image (${image.width}, ${image.height})")
   val painter = new PainterlyCreator()
   val sobelY = Array(Array[Float](1, 2, 1),
                     Array[Float](0, 0, 0),
@@ -54,23 +58,9 @@ class PainterlyApplet extends PApplet {
     background(255);
     textSize(24)
     fill(0, 120, 120)
-    text("Original Image", 20, 20)
-    image(image, 0, 50)
-    val gradientImage = GradientImage(image)
-    text("Vertical Edges", 620, 20)
-    image(gradientImage.yGradientImage, 600, 50)
-    text("Horizontal Edges", 1220, 20)
-    image(gradientImage.xGradientImage, 1200, 50)
-  }
-  
-  private def drawLayer(strokeSize: Int) {
-    val strokePoints = painter.findStrokePoints(image, strokeSize)
-    strokePoints.foreach {
-      case (x, y, size) => {
-        val colour = image.pixels(x + (y*image.width))
-        fill(colour)
-        ellipse(x, y, size, size)
-      }
-    }
+    //text("Original Image", 20, 20)
+    image(image, 0, 0)
+    // text("Painted Image", 620, 20)
+    val painting = painter.paint(image, Seq(20, 10, 5))
   }
 }

@@ -6,10 +6,10 @@ import processing.core.PApplet
 case class Gradient(pixels: Array[Array[Float]])
 
 object GradientImage {
-  def apply(image: PImage)(implicit applet: PApplet) = new AdvancedPImage(image) with GradientImage 
+  def apply(image: PImage)(implicit applet: PApplet) = new GradientImage(image) 
 }
 
-trait GradientImage { this: AdvancedPImage =>
+class GradientImage(val image: PImage)(implicit apple: PApplet) extends AdvancedPImage(image) { 
   val xGradient = createGradient(Kernel.sobelKernelX)
   val yGradient = createGradient(Kernel.sobelKernelY)
   
@@ -40,5 +40,23 @@ trait GradientImage { this: AdvancedPImage =>
     val image = new PImage(gradient.pixels(0).length, gradient.pixels.length)
     image.pixels = pixels
     return image
+  }
+  
+  /**
+   * Returns the unit vector for the gradient
+   * direction at (x,y)
+   * This implies |(gx, gy)| = 1
+   */
+  def gradientDirection(x: Int, y: Int): (Float, Float) = {
+    val gx = xGradient.pixels(y)(x)
+    val gy = yGradient.pixels(y)(x)
+    val mag = gradientMagnitude(x, y)
+    return (gx/mag, gy/mag)
+  }
+  
+  def gradientMagnitude(x: Int, y: Int): Float = {
+    val gx = xGradient.pixels(y)(x)
+    val gy = yGradient.pixels(y)(x)
+    return Math.sqrt((gx*gx) + (gy*gy)).toFloat
   }
 }
