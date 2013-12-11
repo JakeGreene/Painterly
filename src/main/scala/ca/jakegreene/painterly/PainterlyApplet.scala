@@ -30,7 +30,7 @@ class PainterlyApplet extends PApplet {
   //val image = loadImage("sunflower.jpg")
   val image = loadImage("Domo_lizard_smaller.png")
   println(s"Image (${image.width}, ${image.height})")
-  val painter = new PainterlyCreator()
+  val painter = new PainterlyCreator(2, 4, 10)
   
   override def setup() {
     /*
@@ -50,9 +50,14 @@ class PainterlyApplet extends PApplet {
     background(255);
     textSize(24)
     fill(0, 120, 120)
-    //text("Original Image", 20, 20)
-    image(image, 0, 0)
-    // text("Painted Image", 620, 20)
-    val painting = painter.paint(image, Seq(10, 6, 2))
+    text("Original Image", 20, 20)
+    image(image, 0, 30)
+    
+    textSize(24)
+    fill(0, 120, 120)
+    text("Painted Image", 620, 20)
+    val painted = painter.paint(image, Seq(10, 4, 2))
+    // Single Thread, Avg of 3 tests: 11.6 seconds
+    image(painted, 600, 30)
   }
 }

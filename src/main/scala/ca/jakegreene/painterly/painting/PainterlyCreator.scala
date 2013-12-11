@@ -7,29 +7,45 @@ import ca.jakegreene.processing.Colour._
 import ca.jakegreene.painterly.util.Blur
 import processing.core.PApplet
 import ca.jakegreene.processing.GradientImage
+import processing.core.PGraphics
 
-class PainterlyCreator()(implicit applet: PApplet) {
+class PainterlyCreator(threshold: Int, minStrokeLength: Int, maxStrokeLength: Int)(implicit applet: PApplet) {
 
-  def paint(image: PImage, strokeSizes: Seq[Int]) {
+  def paint(image: PImage, strokeSizes: Seq[Int]): PImage = {
     // Use the largest strokes first
-    strokeSizes.sortWith(_ > _).foreach { size =>
-      val threshold = 2
-      val blurredImage = Blur.gaussian(image, size)
-      val differenceImage = image.difference(blurredImage)
-      val gridSize = size
-      val points = for {
-        x <- 0 to (image.width - gridSize, gridSize)
-        y <- 0 to (image.height - gridSize, gridSize)
-        error = calculateAreaError(differenceImage, x, y, gridSize)
-        if (error > threshold)
-        (drawX, drawY) = maxError(differenceImage, x, y, gridSize)
-      } yield (drawX, drawY)
-      
-      val gradient = GradientImage(blurredImage)
-      points.foreach {case (x, y) => {
-        drawStroke(x, y, size, gradient, image)
-      }}
+    val paintedLayers = strokeSizes.sortWith(_ > _) map { size =>
+      paintLayer(image, size)
     }
+    val finalImage = image.get()
+    paintedLayers foreach { layer =>
+      finalImage.blend(layer, 0, 0, finalImage.width, finalImage.height, 0, 0, layer.width, layer.height, PConstants.BLEND)
+    }
+    return finalImage
+  }
+
+  def paintLayer(image: PImage, strokeSize: Int): PImage = {
+    val blurredImage = Blur.gaussian(image, strokeSize)
+    val differenceImage = image.difference(blurredImage)
+    val gridSize = strokeSize
+    val points = for {
+      x <- 0 to (image.width - gridSize, gridSize)
+      y <- 0 to (image.height - gridSize, gridSize)
+      error = calculateAreaError(differenceImage, x, y, gridSize)
+      if (error > threshold)
+      (drawX, drawY) = maxError(differenceImage, x, y, gridSize)
+    } yield (drawX, drawY)
+
+    val gradient = GradientImage(blurredImage)
+    val graphics = applet.createGraphics(image.width, image.height)
+    graphics.beginDraw()
+    graphics.background(0, 0, 0, 0) // Full Transparency allows the image to be blended
+    points.foreach {
+      case (x, y) => {
+        drawStroke(x, y, strokeSize, gradient, image, graphics)
+      }
+    }
+    graphics.endDraw()
+    return graphics
   }
 
   private def calculateAreaError(differenceImage: PImage, x: Int, y: Int, width: Int): Float = {
@@ -59,12 +75,10 @@ class PainterlyCreator()(implicit applet: PApplet) {
     return (max._1, max._2)
   }
 
-  private def drawStroke(startX: Int, startY: Int, strokeWidth: Int, referenceImage: GradientImage, original: PImage) {
-    val maxStrokeLength = 10
-    val minStrokeLength = 4
+  private def drawStroke(startX: Int, startY: Int, strokeWidth: Int, referenceImage: GradientImage, original: PImage, renderer: PGraphics) {
     val strokeColour = referenceImage.image.get(startX, startY)
-    applet.stroke(strokeColour)
-    applet.strokeWeight(strokeWidth)
+    renderer.stroke(strokeColour)
+    renderer.strokeWeight(strokeWidth)
     var (lastX, lastY) = (startX, startY)
     var (lastXDir, lastYDir) = (0f, 0f)
     
@@ -81,7 +95,7 @@ class PainterlyCreator()(implicit applet: PApplet) {
       val (dx, dy) = if ((lastXDir * -gy) + (lastYDir * gx) < 0) (gy, -gx) else (-gy, gx)
       val x = max(min(lastX + strokeWidth*dx, referenceImage.image.width - 1), 0).toInt
       val y = max(min(lastY + strokeWidth*dy, referenceImage.image.height - 1), 0).toInt
-      applet.line(lastX, lastY, x, y)
+      renderer.line(lastX, lastY, x, y)
       lastX = x
       lastY = y
       lastXDir = dx
