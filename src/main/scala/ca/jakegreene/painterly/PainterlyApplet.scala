@@ -3,7 +3,6 @@
 package ca.jakegreene.painterly
 
 import scala.collection.mutable.ListBuffer
-
 import ca.jakegreene.painterly.painting.PainterlyCreator
 import ca.jakegreene.processing.AdvancedPImage.PImage2AdvancedPImage
 import ca.jakegreene.processing.GradientImage
@@ -11,6 +10,7 @@ import ca.jakegreene.processing.Kernel
 import processing.core.PApplet
 import processing.core.PConstants
 import processing.core.PImage
+import ca.jakegreene.painterly.util.Blur
 
 object Painterly {
   def main(args: Array[String]) {
@@ -27,18 +27,10 @@ object Painterly {
 class PainterlyApplet extends PApplet {
   implicit val applet = this
   
-  val image = loadImage("Domo_lizard_smaller.png") 
+  //val image = loadImage("sunflower.jpg")
+  val image = loadImage("Domo_lizard_smaller.png")
   println(s"Image (${image.width}, ${image.height})")
   val painter = new PainterlyCreator()
-  val sobelY = Array(Array[Float](1, 2, 1),
-                    Array[Float](0, 0, 0),
-                    Array[Float](-1, -2, -1))
-  val sobelYKernel = Kernel(sobelY)
-  val sobelX = Array(Array[Float](1, 0, -1),
-                     Array[Float](2, 0, -2),
-                     Array[Float](1, 0, -1))
-  val sobelXKernel = Kernel(sobelX)
-  
   
   override def setup() {
     /*
@@ -61,6 +53,6 @@ class PainterlyApplet extends PApplet {
     //text("Original Image", 20, 20)
     image(image, 0, 0)
     // text("Painted Image", 620, 20)
-    val painting = painter.paint(image, Seq(20, 10, 5))
+    val painting = painter.paint(image, Seq(10, 6, 2))
   }
 }

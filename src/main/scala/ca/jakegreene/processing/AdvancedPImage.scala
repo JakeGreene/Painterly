@@ -2,25 +2,11 @@ package ca.jakegreene.processing
 
 import processing.core.PImage
 import processing.core.PApplet
+import ca.jakegreene.processing.Colour._
 import scala.language.implicitConversions
 
 object AdvancedPImage {
-  
-  private[AdvancedPImage] case class Colour(red: Float, green: Float, blue: Float)
-  
-  private[AdvancedPImage] def toColour(colour: Int)(implicit applet: PApplet): Colour = {
-    Colour(applet.red(colour), applet.green(colour), applet.blue(colour))
-  }
-  
-  private[AdvancedPImage] def diff(base: Colour, other: Colour): Float = {
-    val redDiff = (base.red - other.red)
-    val greenDiff = (base.green - other.green)
-    val blueDiff = (base.blue - other.blue)
-    val diffSquared = (redDiff * redDiff) + (greenDiff * greenDiff) + (blueDiff * blueDiff)
-    val diff = Math.sqrt(diffSquared).asInstanceOf[Float]
-    return diff
-  }
-  
+
   implicit def PImage2AdvancedPImage(image: PImage)(implicit applet: PApplet) = new AdvancedPImage(image)(applet)
   
 }
@@ -45,8 +31,8 @@ class AdvancedPImage(protected val self: PImage)(protected implicit val applet: 
     for (x <- 0 to (self.width - 1)) {
       for (y <- 0 to (self.height - 1)) {
         val i = x + (y*self.width)
-        val selfColour = toColour(selfData(i))
-        val otherColour = toColour(otherData(i))
+        val selfColour = selfData(i)
+        val otherColour = otherData(i)
         val difference = diff(selfColour, otherColour)
         diffImage.pixels(i) = applet.color(difference)
       }

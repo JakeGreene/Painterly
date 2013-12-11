@@ -3,6 +3,7 @@ package ca.jakegreene.painterly.painting
 import processing.core.PImage
 import processing.core.PConstants
 import ca.jakegreene.processing.AdvancedPImage._
+import ca.jakegreene.processing.Colour._
 import ca.jakegreene.painterly.util.Blur
 import processing.core.PApplet
 import ca.jakegreene.processing.GradientImage
@@ -26,7 +27,7 @@ class PainterlyCreator()(implicit applet: PApplet) {
       
       val gradient = GradientImage(blurredImage)
       points.foreach {case (x, y) => {
-        drawStroke(x, y, size, gradient)
+        drawStroke(x, y, size, gradient, image)
       }}
     }
   }
@@ -58,8 +59,9 @@ class PainterlyCreator()(implicit applet: PApplet) {
     return (max._1, max._2)
   }
 
-  private def drawStroke(startX: Int, startY: Int, strokeWidth: Int, referenceImage: GradientImage) {
-    val maxStrokeLength = 2
+  private def drawStroke(startX: Int, startY: Int, strokeWidth: Int, referenceImage: GradientImage, original: PImage) {
+    val maxStrokeLength = 10
+    val minStrokeLength = 4
     val strokeColour = referenceImage.image.get(startX, startY)
     applet.stroke(strokeColour)
     applet.strokeWeight(strokeWidth)
@@ -67,7 +69,13 @@ class PainterlyCreator()(implicit applet: PApplet) {
     var (lastXDir, lastYDir) = (0f, 0f)
     
     for (i <- 0 to maxStrokeLength) {
+      // Detect vanishing gradient
       if (referenceImage.gradientMagnitude(lastX, lastY) == 0) return
+      // We need to avoid painting too far out of the lines
+      val originalDelta = diff(referenceImage.image.get(lastX, lastY), original.get(lastX, lastY))
+      val strokeDelta = diff(referenceImage.image.get(lastX, lastY), strokeColour)
+      if (i > minStrokeLength && originalDelta < strokeDelta) return
+      
       val (gx, gy) = referenceImage.gradientDirection(lastX, lastY)
       // Choose the normal to the gradient direction which will produce the least curvature in the stroke
       val (dx, dy) = if ((lastXDir * -gy) + (lastYDir * gx) < 0) (gy, -gx) else (-gy, gx)
