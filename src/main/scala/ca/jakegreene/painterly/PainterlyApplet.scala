@@ -56,8 +56,12 @@ class PainterlyApplet extends PApplet {
     textSize(24)
     fill(0, 120, 120)
     text("Painted Image", 620, 20)
-    val painted = painter.paint(image, Seq(10, 4, 2))
-    // Single Thread, Avg of 3 tests: 11.6 seconds
+    /*
+     * Single Thread, Avg of 3 tests: 11.65 seconds
+     * Multi Thread, Avg of 3 test:   7.00 seconds
+     * A 40% increase in speed
+     */
+    val painted = painter.paint(image, Seq(10, 4, 2)) 
     image(painted, 600, 30)
   }
 }

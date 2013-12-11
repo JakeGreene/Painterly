@@ -8,16 +8,28 @@ import ca.jakegreene.painterly.util.Blur
 import processing.core.PApplet
 import ca.jakegreene.processing.GradientImage
 import processing.core.PGraphics
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
+import java.util.concurrent.Executors
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class PainterlyCreator(threshold: Int, minStrokeLength: Int, maxStrokeLength: Int)(implicit applet: PApplet) {
+  
+  val execService = Executors.newCachedThreadPool()
+  implicit val execContext = ExecutionContext.fromExecutorService(execService)
+
 
   def paint(image: PImage, strokeSizes: Seq[Int]): PImage = {
     // Use the largest strokes first
-    val paintedLayers = strokeSizes.sortWith(_ > _) map { size =>
-      paintLayer(image, size)
-    }
+    val futureLayers = Future.sequence(strokeSizes.sortWith(_ > _) map { size =>
+      Future { paintLayer(image, size) }
+    })
+    
+    val layers = Await.result(futureLayers, 60.second)
+    
     val finalImage = image.get()
-    paintedLayers foreach { layer =>
+    layers foreach { layer =>
       finalImage.blend(layer, 0, 0, finalImage.width, finalImage.height, 0, 0, layer.width, layer.height, PConstants.BLEND)
     }
     return finalImage
