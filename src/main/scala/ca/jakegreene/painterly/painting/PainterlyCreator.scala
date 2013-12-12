@@ -103,8 +103,8 @@ class PainterlyCreator(threshold: Int, minStrokeLength: Int, maxStrokeLength: In
       if (i > minStrokeLength && originalDelta < strokeDelta) return
       
       val (gx, gy) = referenceImage.gradientDirection(lastX, lastY)
-      // Choose the normal to the gradient direction which will produce the least curvature in the stroke
-      val (dx, dy) = if ((lastXDir * -gy) + (lastYDir * gx) < 0) (gy, -gx) else (-gy, gx)
+      // Choose the normal to the gradient direction which will produce the most curvature in the stroke
+      val (dx, dy) = if ((lastXDir * -gy) + (lastYDir * gx) < 0) (-gy, gx) else (gy, -gx)
       val x = max(min(lastX + strokeWidth*dx, referenceImage.image.width - 1), 0).toInt
       val y = max(min(lastY + strokeWidth*dy, referenceImage.image.height - 1), 0).toInt
       renderer.line(lastX, lastY, x, y)
