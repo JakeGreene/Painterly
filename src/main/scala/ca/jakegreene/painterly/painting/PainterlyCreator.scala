@@ -16,7 +16,7 @@ import scala.concurrent.duration._
 
 object PainterlyCreator {
   case class Style(threshold: Int, strokeWidths: Seq[Int], strokeMinLength: Int, strokeMaxLength: Int)
-  val impressionist = Style(10, Seq(8, 6, 2), 4, 16)
+  val impressionist = Style(10, Seq(8, 4, 2), 2, 12)
   val expressionist = Style(15, Seq(8, 4, 2), 10, 16)
   val pointalist = Style(1, Seq(4, 2), 0, 1)
   
@@ -33,22 +33,10 @@ class PainterlyCreator(image: PImage)(implicit applet: PApplet) {
   implicit val execContext = ExecutionContext.fromExecutorService(execService)
 
 
-  def paint(style: Style): PImage = {
-    // Use the largest strokes first
-    val futureTopLayers = style.strokeWidths.sortWith(_ > _) map { size =>
-      Future { (createLayer(size, style), size) }
-    }
-
-    val futureLayers = Future.sequence(futureTopLayers)
-    val layers = Await.result(futureLayers, 60.second)
-    
-    //val finalImage = image.get()
-    // Sometimes areas will not be drawn over. Fill these places with a blurry version of the original
-    val baseImage = Blur.gaussian(image.get(), style.strokeWidths.head)
-    //val finalImage = new PImage(image.width, image.height)
-    val finalImage = layers.foldLeft(baseImage)((builtImage, layerData) => {
-      val layer = layerData._1
-      val size = layerData._2
+  def paint(style: Style): PImage = {    
+    val baseImage = image.get()
+    val finalImage = style.strokeWidths.foldLeft(baseImage)((builtImage, size) => {
+      val layer = createLayer(size, style, builtImage)
       val paintedLayer = paintLayer(layer, size, style, builtImage)
       builtImage.blend(paintedLayer, 0, 0, builtImage.width, builtImage.height, 
                                      0, 0, paintedLayer.width, paintedLayer.height, 
@@ -58,9 +46,9 @@ class PainterlyCreator(image: PImage)(implicit applet: PApplet) {
     return finalImage
   }
 
-  private def createLayer(strokeSize: Int, style: Style): Layer = {
+  private def createLayer(strokeSize: Int, style: Style, baseImage: PImage): Layer = {
     val blurredImage = Blur.gaussian(image, strokeSize)
-    val differenceImage = image.difference(blurredImage)
+    val differenceImage = baseImage.difference(blurredImage)
     val gridSize = strokeSize
     val points = for {
       x <- 0 to (image.width - gridSize, gridSize)
@@ -118,11 +106,10 @@ class PainterlyCreator(image: PImage)(implicit applet: PApplet) {
     val startY = startPoint._2
     val strokeColour = gradient.image.get(startX, startY)
     renderer.stroke(strokeColour)
-    renderer.strokeWeight(strokeWidth/2)
+    renderer.strokeWeight(strokeWidth)
     var (lastX, lastY) = (startX, startY)
     var (lastXDir, lastYDir) = (0f, 0f)
-    
-    var count = 0
+
     for (i <- 0 to (style.strokeMaxLength - 1)) {
       // Detect vanishing gradient
       if (gradient.gradientMagnitude(lastX, lastY) == 0) return
@@ -130,14 +117,13 @@ class PainterlyCreator(image: PImage)(implicit applet: PApplet) {
       val originalDelta = diff(gradient.image.get(lastX, lastY), baseImage.get(lastX, lastY))
       val strokeDelta = diff(gradient.image.get(lastX, lastY), strokeColour)
       if (i > style.strokeMinLength && originalDelta < strokeDelta) return
-      
+
       val (gx, gy) = gradient.gradientDirection(lastX, lastY)
       // Choose the normal to the gradient direction which will produce the most curvature in the stroke
-      val (dx, dy) = if ((lastXDir * -gy) + (lastYDir * gx) < 0) (-gy, gx) else (gy, -gx)
-      val x = max(min(lastX + strokeWidth*dx, gradient.image.width - 1), 0).toInt
-      val y = max(min(lastY + strokeWidth*dy, gradient.image.height - 1), 0).toInt
+      val (dx, dy) = if ((lastXDir * -gy) + (lastYDir * gx) < 0) (gy, -gx)  else (-gy, gx)
+      val x = max(min(lastX + strokeWidth * dx, gradient.image.width - 1), 0).toInt
+      val y = max(min(lastY + strokeWidth * dy, gradient.image.height - 1), 0).toInt
       renderer.line(lastX, lastY, x, y)
-      count += 1
       lastX = x
       lastY = y
       lastXDir = dx
