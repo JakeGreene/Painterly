@@ -30,7 +30,7 @@ class PainterlyApplet extends PApplet {
   //val image = loadImage("sunflower.jpg")
   val image = loadImage("Domo_lizard_smaller.png")
   println(s"Image (${image.width}, ${image.height})")
-  val painter = new PainterlyCreator(2, 4, 10)
+  val painter = PainterlyCreator(image)
   
   override def setup() {
     /*
@@ -61,7 +61,9 @@ class PainterlyApplet extends PApplet {
      * Multi Thread, Avg of 3 test:   7.00 seconds
      * A 40% increase in speed
      */
-    val painted = painter.paint(image, Seq(10, 4, 2)) 
+    val painted = painter.paint(PainterlyCreator.impressionist) 
     image(painted, 600, 30)
+    //val pointalist = painter.paint(PainterlyCreator.pointalist)
+    //image(pointalist, 1200, 30)
   }
 }
