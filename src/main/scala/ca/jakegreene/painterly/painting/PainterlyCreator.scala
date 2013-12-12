@@ -27,31 +27,38 @@ object PainterlyCreator {
 class PainterlyCreator(image: PImage)(implicit applet: PApplet) {
   import PainterlyCreator._
   
+  private case class Layer(points: Seq[(Int, Int)], reference: PImage)
+  
   val execService = Executors.newCachedThreadPool()
   implicit val execContext = ExecutionContext.fromExecutorService(execService)
 
 
   def paint(style: Style): PImage = {
     // Use the largest strokes first
-    val futureBackground = Future { paintLayer(style.strokeWidths.head, style, true) }
-    val futureTopLayers = style.strokeWidths.tail.sortWith(_ > _) map { size =>
-      Future { paintLayer(size, style, false) }
+    val futureTopLayers = style.strokeWidths.sortWith(_ > _) map { size =>
+      Future { (createLayer(size, style), size) }
     }
 
-    val futureLayers = Future.sequence(futureBackground +: futureTopLayers)
+    val futureLayers = Future.sequence(futureTopLayers)
     val layers = Await.result(futureLayers, 60.second)
     
     //val finalImage = image.get()
     // Sometimes areas will not be drawn over. Fill these places with a blurry version of the original
-    val finalImage = Blur.gaussian(image.get(), style.strokeWidths.head)
+    val baseImage = Blur.gaussian(image.get(), style.strokeWidths.head)
     //val finalImage = new PImage(image.width, image.height)
-    layers foreach { layer =>
-      finalImage.blend(layer, 0, 0, finalImage.width, finalImage.height, 0, 0, layer.width, layer.height, PConstants.BLEND)
-    }
+    val finalImage = layers.foldLeft(baseImage)((builtImage, layerData) => {
+      val layer = layerData._1
+      val size = layerData._2
+      val paintedLayer = paintLayer(layer, size, style, builtImage)
+      builtImage.blend(paintedLayer, 0, 0, builtImage.width, builtImage.height, 
+                                     0, 0, paintedLayer.width, paintedLayer.height, 
+                                     PConstants.BLEND)
+      builtImage                             
+    })
     return finalImage
   }
 
-  def paintLayer(strokeSize: Int, style: Style, background: Boolean): PImage = {
+  private def createLayer(strokeSize: Int, style: Style): Layer = {
     val blurredImage = Blur.gaussian(image, strokeSize)
     val differenceImage = image.difference(blurredImage)
     val gridSize = strokeSize
@@ -59,23 +66,12 @@ class PainterlyCreator(image: PImage)(implicit applet: PApplet) {
       x <- 0 to (image.width - gridSize, gridSize)
       y <- 0 to (image.height - gridSize, gridSize)
       error = calculateAreaError(differenceImage, x, y, gridSize)
-      if (background || error > style.threshold)
+      if (error > style.threshold)
       (drawX, drawY) = maxError(differenceImage, x, y, gridSize)
     } yield (drawX, drawY)
-
-    val gradient = GradientImage(blurredImage)
-    val graphics = applet.createGraphics(image.width, image.height)
-    graphics.beginDraw()
-    graphics.background(0, 0, 0, 0) // Full Transparency allows the image to be blended
-    points.foreach {
-      case (x, y) => {
-        drawStroke(x, y, strokeSize, gradient, graphics, style)
-      }
-    }
-    graphics.endDraw()
-    return graphics
+    return Layer(points, blurredImage)
   }
-
+  
   private def calculateAreaError(differenceImage: PImage, x: Int, y: Int, width: Int): Float = {
     var sum: Float = 0
     for (x_i <- x to (x + width - 1)) {
@@ -102,9 +98,25 @@ class PainterlyCreator(image: PImage)(implicit applet: PApplet) {
     }
     return (max._1, max._2)
   }
+  
+  private def paintLayer(layer: Layer, strokeSize: Int, style: Style, baseImage: PImage): PImage = {
+    val gradient = GradientImage(layer.reference)
+    val graphics = applet.createGraphics(image.width, image.height)
+    graphics.beginDraw()
+    graphics.background(0, 0, 0, 0) // Full Transparency allows the image to be blended
+    layer.points.foreach {
+      case (x, y) => {
+        drawStroke((x, y), strokeSize, gradient, graphics, style, baseImage)
+      }
+    }
+    graphics.endDraw()
+    return graphics
+  }
 
-  private def drawStroke(startX: Int, startY: Int, strokeWidth: Int, referenceImage: GradientImage, renderer: PGraphics, style: Style) {
-    val strokeColour = referenceImage.image.get(startX, startY)
+  private def drawStroke(startPoint: (Int, Int), strokeWidth: Int, gradient: GradientImage, renderer: PGraphics, style: Style, baseImage: PImage) {
+    val startX = startPoint._1
+    val startY = startPoint._2
+    val strokeColour = gradient.image.get(startX, startY)
     renderer.stroke(strokeColour)
     renderer.strokeWeight(strokeWidth/2)
     var (lastX, lastY) = (startX, startY)
@@ -113,17 +125,17 @@ class PainterlyCreator(image: PImage)(implicit applet: PApplet) {
     var count = 0
     for (i <- 0 to (style.strokeMaxLength - 1)) {
       // Detect vanishing gradient
-      if (referenceImage.gradientMagnitude(lastX, lastY) == 0) return
+      if (gradient.gradientMagnitude(lastX, lastY) == 0) return
       // We need to avoid painting too far out of the lines
-      val originalDelta = diff(referenceImage.image.get(lastX, lastY), image.get(lastX, lastY))
-      val strokeDelta = diff(referenceImage.image.get(lastX, lastY), strokeColour)
+      val originalDelta = diff(gradient.image.get(lastX, lastY), baseImage.get(lastX, lastY))
+      val strokeDelta = diff(gradient.image.get(lastX, lastY), strokeColour)
       if (i > style.strokeMinLength && originalDelta < strokeDelta) return
       
-      val (gx, gy) = referenceImage.gradientDirection(lastX, lastY)
+      val (gx, gy) = gradient.gradientDirection(lastX, lastY)
       // Choose the normal to the gradient direction which will produce the most curvature in the stroke
       val (dx, dy) = if ((lastXDir * -gy) + (lastYDir * gx) < 0) (-gy, gx) else (gy, -gx)
-      val x = max(min(lastX + strokeWidth*dx, referenceImage.image.width - 1), 0).toInt
-      val y = max(min(lastY + strokeWidth*dy, referenceImage.image.height - 1), 0).toInt
+      val x = max(min(lastX + strokeWidth*dx, gradient.image.width - 1), 0).toInt
+      val y = max(min(lastY + strokeWidth*dy, gradient.image.height - 1), 0).toInt
       renderer.line(lastX, lastY, x, y)
       count += 1
       lastX = x
